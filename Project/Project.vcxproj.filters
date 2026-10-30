@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Agent src">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Agent src\Agent">
+      <UniqueIdentifier>{748f0387-b211-487b-bd2f-0f2f45adffa3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Agent src\Core">
+      <UniqueIdentifier>{e04574f4-3d76-4d84-b842-decdca37eb00}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Agent src\NetWork">
+      <UniqueIdentifier>{8b98dbdb-4822-449d-bef5-eebd87358ca7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Serv src">
+      <UniqueIdentifier>{e8694268-b283-4489-a666-8915b34f772f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Agent.cpp">
+      <Filter>Agent src\Agent</Filter>
+    </ClCompile>
+    <ClCompile Include="Core.cpp">
+      <Filter>Agent src\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Router.cpp">
+      <Filter>Agent src\NetWork</Filter>
+    </ClCompile>
+    <ClCompile Include="Mapper.cpp">
+      <Filter>Agent src\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="ThredMng.cpp">
+      <Filter>Agent src\Core</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Global Header.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Network.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Mapper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
