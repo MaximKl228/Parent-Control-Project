@@ -127,7 +127,6 @@
   <ItemGroup>
     <ClCompile Include="Agent.cpp" />
     <ClCompile Include="Core.cpp" />
-    <ClCompile Include="Mapper.cpp" />
     <ClCompile Include="Router.cpp" />
     <ClCompile Include="ThredMng.cpp" />
   </ItemGroup>

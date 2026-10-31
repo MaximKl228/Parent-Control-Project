@@ -3,7 +3,8 @@
 class ThredMng 
 {
 private:
-	std::vector<std::thread::id> m_ThreadsIds;
+
+	Mapper<std::thread> thrdTree;
 
 public:
 

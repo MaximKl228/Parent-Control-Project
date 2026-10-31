@@ -36,9 +36,6 @@
     <ClCompile Include="Router.cpp">
       <Filter>Agent src\NetWork</Filter>
     </ClCompile>
-    <ClCompile Include="Mapper.cpp">
-      <Filter>Agent src\Core</Filter>
-    </ClCompile>
     <ClCompile Include="ThredMng.cpp">
       <Filter>Agent src\Core</Filter>
     </ClCompile>

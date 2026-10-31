@@ -3,7 +3,6 @@
 #include "Global Header.h"
 #include <type_traits>
 
-
 template<typename NodeType>
 class Node : public std::enable_shared_from_this<Node<NodeType>>
 {
