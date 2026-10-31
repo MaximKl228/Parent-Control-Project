@@ -39,6 +39,9 @@
     <ClCompile Include="ThredMng.cpp">
       <Filter>Agent src\Core</Filter>
     </ClCompile>
+    <ClCompile Include="Logger.cpp">
+      <Filter>Agent src\Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Global Header.h">
@@ -48,6 +51,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Mapper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Logger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
