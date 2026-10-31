@@ -10,8 +10,8 @@ private:
 	std::atomic<uint8_t> status; // every bit is a flag, for every use in the project will be the flag table for the meanings of the bits
 	//(all exept one, the first bit will mean that the node is sitll alive or isn't in the desctructor at the time)
 	std::atomic<std::shared_ptr<NodeType>> m_data; // the data in that spec node
-	std::vector<std::weak_ptr<Node<NodeType>>> m_childe; // all the chld nodes of that one node
-	std::atomic<std::shared_ptr<Node<NodeType>>> m_parent;
+	std::vector<std::shared_ptr<Node<NodeType>>> m_childe; // all the chld nodes of that one node
+	std::atomic<std::weak_ptr<Node<NodeType>>> m_parent;
 	std::weak_ptr<Node<NodeType>> _self; // i kinda needed it for easy self refs for methods so i dont have a magic shit
 public:
 	//for roots kinda but dumb asses will use it as a basic Node :(
@@ -79,10 +79,11 @@ public:
 		std::shared_ptr<Node<NodeType>> _temp = std::move(n_parent);
 		m_parent.store(_temp);
 	}
-	void _Add_Chld()
+	void _Add_Chld(std::shared_ptr<Node<NodeType>> n_chld)
 	{
-
+		m_childe.push_back(n_chld);
 	}
+	
 };
 
 template<typename _MapType>
