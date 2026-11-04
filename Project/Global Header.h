@@ -4,5 +4,3 @@
 #include <vector>
 #include <utility>
 #include <thread>
-
-#include "Mapper.h"

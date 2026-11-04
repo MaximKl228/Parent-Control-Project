@@ -1,3 +1,4 @@
+/*
 #pragma once
 #include <atomic>
 #include "Global Header.h"
@@ -120,3 +121,4 @@ public:
 
 	}
 };
+*/
