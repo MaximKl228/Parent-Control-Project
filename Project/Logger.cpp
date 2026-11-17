@@ -6,5 +6,5 @@
 void Logger::Write(LogLvl level, std::string_view message) {
     static std::mutex mutex;
     std::lock_guard lock(mutex);
-    std::cout << message << '\n'; // add some more info bitch
+    std::cout << message << '\n'; //TODO: add some more info bitch
 }
