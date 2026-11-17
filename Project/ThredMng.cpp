@@ -1,37 +1,48 @@
 #pragma once
 #include "ThrdMng.h"
 
+enum BitMask : uint32_t
+{
+	//TODO: Write down all the events
+	_FIRED = 1u << 0
+	
+};
+
 class Event
 {
 private:
-	bool _signaled = false;
-	bool _autoReset;
 	std::string _name;
 	std::mutex _mtx;
 	std::condition_variable_any _CV;
 
+	uint32_t _calledEvents = 0;
+	uint32_t _manualEvents = 0;
+	
 
 public:
-	explicit Event(bool o_autoReset = true, const std::string& name) : _autoReset(o_autoReset), _name(name) {}
+	explicit Event(const std::string& name, bool o_nt_ALL) : _name(name) {  }
 
-	void _StartEVNT()
+	void _SetManual(uint32_t bits) { std::lock_guard g(_mtx); _manualEvents |= bits; }
+
+	void _Signal(uint32_t bits)
 	{
-		{std::lock_guard g(_mtx); _signaled = true;}
-		_autoReset ? _CV.notify_one() : _CV.notify_all();
+		{ std::lock_guard g(_mtx); _calledEvents |= bits; }
+		_CV.notify_one();
 		//TODO:Loggign
 	}
-	void _Reset()
+	void _manualReset(uint32_t bits)
 	{
 		std::lock_guard g(_mtx);
-		_signaled = false;
+		 _manualEvents &= ~bits;
 	}
 
-	bool Wait(std::stop_token _ST)
+	uint32_t Wait(uint32_t mask, std::stop_token _ST)
 	{
 		std::unique_lock l(_mtx);
-		if (!_CV.wait(l, _ST, [&] {return _signaled;}))
+		if (!_CV.wait(l, _ST, [&] {return (_calledEvents & _manualEvents) != 0;}))
 			return false;
-		if (_autoReset) { _signaled = false; }
+		uint32_t fired = _calledEvents & mask;
+		_calledEvents &= ~(fired & ~_manualEvents);
 		return true;
 	}
 };
@@ -113,15 +124,21 @@ public:
 	}
 
 	//TODO: write the CV's, event logic and write down the event and thread logic in the README.md
-	void _ThorwEvent(std::string _SRCNAME, std::string EVENTNAME)
+	void _ThorwEvent(std::string _SRCNAME, std::string EVENTNAME, uint32_t mask)
 	{
 		std::lock_guard g(_lock);
 		auto it = _thrds.find(EVENTNAME);
 		if (it != _thrds.end())
 		{
-			it->second.second->_StartEVNT();
-			//TODO:Logging
-
+			if (it->second.second != nullptr)
+			{
+				it->second.second->_Signal(mask);
+				//TODO:Logging
+			}
+			else
+			{
+				//TODO: Logging
+			}
 		}
 		else
 		{
@@ -157,6 +174,11 @@ public:
 				//TODO:Logging
 				return false;
 			}
+		}
+		else
+		{
+			//TODO: Logging
+			return false;
 		}
 	}
 	
