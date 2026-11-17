@@ -4,31 +4,36 @@ class Agent
 {
 private:
 	uint8_t m_Flags;
+	
 
-	void Initialization()
-	{
-		
-	}
-	void NetWorkInIt() 
+	//All basic the Initializers TODO: the initializers
+	void _ThrdMngInit()
 	{
 
 	}
-	void Destructor() 
+	void _NetInit()
+	{
+
+	}
+	void _LogInit()
+	{
+
+	}
+	//Camera init and check
+	bool _CameraInit()
+	{
+
+	}
+	//microphone init and check
+	bool _MicInit()
 	{
 
 	}
 public:
-	Agent() { Initialization(); }
-	~Agent() { Destructor(); }
-	Agent(Agent &o_Agent) {  }
-	Agent(Agent&& o_Agent) noexcept{ }
-	Agent& operator=(Agent&& other) noexcept 
-	{ 
-		if (this != &other) 
-		{
-
-		}
-		return *this;
-	}
+	Agent() { }
+	~Agent() = default;
+	Agent(Agent& o_Agent) = delete;
+	Agent(Agent&& o_Agent) noexcept = delete;
+	Agent& operator=(Agent&& other) noexcept = delete;
 
 };
