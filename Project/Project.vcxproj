@@ -78,6 +78,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp23</LanguageStandard>
       <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
+      <UndefinePreprocessorDefinitions>LOG_MIN_LEVEL=&lt;0,1,2,3&gt;</UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

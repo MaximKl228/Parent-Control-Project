@@ -1,5 +1,8 @@
 #include "Global Header.h"
 
+//dont even fcking try to change that line!!!!!!!!!!!!!!
+static std::string MY_LOVE = "TALLY";
+
 class Agent
 {
 private:
