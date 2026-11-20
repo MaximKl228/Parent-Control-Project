@@ -17,18 +17,18 @@ namespace ThrdMng {
 
 	void Event::_manualReset(uint32_t bits)
 	{
-		std::lock_guard g(_mtx);
 		_manualEvents &= ~bits;
 	}
 
 	uint32_t Event::Wait(uint32_t mask, std::stop_token _ST)
 	{
 		std::unique_lock l(_mtx);
-		if (!_CV.wait(l, _ST, [&] {return (_calledEvents & _manualEvents) != 0;}))
-			return false;
-		uint32_t fired = _calledEvents & mask;
-		_calledEvents &= ~(fired & ~_manualEvents);
-		return true;
+		if (!_CV.wait(l, _ST, [&] {return (_calledEvents | _manualEvents) != 0;}))
+			return 0;
+		uint32_t firedNonManual = _calledEvents & mask;
+		_calledEvents &= ~(firedNonManual & ~_manualEvents);
+		uint32_t firedManual = _manualEvents;
+		return firedManual | firedNonManual;
 	}
 
 
@@ -119,12 +119,35 @@ namespace ThrdMng {
 			});
 	}
 
-	std::shared_ptr<Event> ThreadMng::GetEvent(const std::string& _NAME)
+	void ThreadMng::GetEvent(std::string _NAME, std::atomic<bool>& flag,std::shared_ptr<Event>& e_var)
 	{
-		std::lock_guard g(_lock);
-		auto it = _thrds.find(_NAME);
-		if (it == _thrds.end())
-			return nullptr; //TODO: Logging (not found)
-		return it->second.second;
+		Post([this, name = std::move(_NAME), &flag ,&e_var]()
+			{
+				auto it = _thrds.find(name);
+				if (it == _thrds.end())
+				{
+					e_var = nullptr;
+					flag = true;
+					return;
+				}
+				//TODO: Logger
+				e_var = it->second.second;
+				flag = true;
+			});
 	}
+
+	void ThreadMng::_ResetManual(std::string name, uint32_t bitToReset) // unused!!!
+	{
+		Post([this, name = name, bitToReset = bitToReset]() 
+			{
+			auto it = _thrds.find(name);
+			if (it == _thrds.end())
+				//TODO: Logger
+				return;
+			if (it->second.second == nullptr)
+				return;
+			it->second.second->_manualReset(bitToReset);
+			});
+	}
+	
 }

@@ -14,6 +14,7 @@
 #include <queue>
 #include <vector>
 #include <unordered_map>
+#include <atomic>
 
 namespace ThrdMng {
 
@@ -113,6 +114,9 @@ namespace ThrdMng {
 		//TODO: write the CV's, event logic and write down the event and thread logic in the README.md
 		void ThrowEvent(std::string target, uint32_t mask);
 
-		std::shared_ptr<Event> GetEvent(const std::string& _NAME);
+		void GetEvent(std::string _NAME, std::atomic<bool>& flag, std::shared_ptr<Event>& rtrn);
+
+		void _ResetManual(std::string name, uint32_t bitToReset);
+
 	};
 }
