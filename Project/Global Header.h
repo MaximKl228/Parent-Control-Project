@@ -7,7 +7,8 @@
 #include <mutex>
 #include <condition_variable>
 #include <chrono>
-#include <future>
+#include <queue>
+#include <functional>
 
 #include "ThrdMng.h"
 #include "Logger.h"

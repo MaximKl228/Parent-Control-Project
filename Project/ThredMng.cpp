@@ -1,185 +1,153 @@
-#pragma once
 #include "ThrdMng.h"
 
-enum BitMask : uint32_t
-{
-	//TODO: Write down all the events
-	_FIRED = 1u << 0
-	
-};
+namespace ThrdMng {
 
-class Event
-{
-private:
-	std::string _name;
-	std::mutex _mtx;
-	std::condition_variable_any _CV;
+	// ============================ Event ============================
 
-	uint32_t _calledEvents = 0;
-	uint32_t _manualEvents = 0;
-	
+	Event::Event(const std::string& name, bool o_nt_ALL) : _name(name) {}
 
-public:
-	explicit Event(const std::string& name, bool o_nt_ALL) : _name(name) {  }
+	void Event::_SetManual(uint32_t bits) { std::lock_guard g(_mtx); _manualEvents |= bits; }
 
-	void _SetManual(uint32_t bits) { std::lock_guard g(_mtx); _manualEvents |= bits; }
-
-	void _Signal(uint32_t bits)
+	void Event::_Signal(uint32_t bits)
 	{
 		{ std::lock_guard g(_mtx); _calledEvents |= bits; }
 		_CV.notify_one();
 		//TODO:Loggign
 	}
-	void _manualReset(uint32_t bits)
+
+	void Event::_manualReset(uint32_t bits)
 	{
-		std::lock_guard g(_mtx);
-		 _manualEvents &= ~bits;
+		_manualEvents &= ~bits;
 	}
 
-	uint32_t Wait(uint32_t mask, std::stop_token _ST)
+	uint32_t Event::Wait(uint32_t mask, std::stop_token _ST)
 	{
 		std::unique_lock l(_mtx);
-		if (!_CV.wait(l, _ST, [&] {return (_calledEvents & _manualEvents) != 0;}))
-			return false;
-		uint32_t fired = _calledEvents & mask;
-		_calledEvents &= ~(fired & ~_manualEvents);
-		return true;
+		if (!_CV.wait(l, _ST, [&] {return (_calledEvents | _manualEvents) != 0;}))
+			return 0;
+		uint32_t firedNonManual = _calledEvents & mask;
+		_calledEvents &= ~(firedNonManual & ~_manualEvents);
+		uint32_t firedManual = _manualEvents;
+		return firedManual | firedNonManual;
 	}
-};
 
-class ThreadMng 
-{
-private:
-	std::mutex _lock;
-	std::vector<std::string> c_EVNTName;
-	std::unordered_map<std::string, std::pair<std::jthread,std::shared_ptr<Event>>> _thrds;
-public:
-	//two constucrts cuz we have a piar so in one raw data not in pair and in other alrady alloceted data
-	ThreadMng(std::string&& _SRCNAME, std::jthread _SRCTHREAD, std::shared_ptr<Event> _SRCEVENT)
+
+	// ========================== ThreadMng ==========================
+
+	ThreadMng::ThreadMng(std::string&& _SRCNAME, std::jthread _SRCTHREAD, std::shared_ptr<Event> _SRCEVENT)
 	{
-
 		std::lock_guard g(_lock);
 		_thrds.emplace(std::move(_SRCNAME), std::make_pair(std::move(_SRCTHREAD), std::move(_SRCEVENT)));
+	}
 
-	}
-	ThreadMng(std::string&& _SRCNAME, std::pair<std::jthread, std::shared_ptr<Event>>&& _PAIR)
+	ThreadMng::ThreadMng(std::string&& _SRCNAME, ThrdEntry&& _PAIR)
 	{
 		std::lock_guard g(_lock);
-		_thrds.emplace(_SRCNAME, _PAIR);
+		_thrds.emplace(std::move(_SRCNAME), std::move(_PAIR));
 	}
-	//destructor
-	~ThreadMng() = default;
-	//no copying!!!!!
-	ThreadMng(const ThreadMng& o) = delete;
-	//no moveeeeeee))))
-	ThreadMng(ThreadMng&& o) noexcept = delete;
-	ThreadMng& operator=(ThreadMng&& o)noexcept = delete;
-	
-	//start a new thread
-	template<typename F>
-	void Start(const std::string& name, F&& fn)
+
+	void ThreadMng::Post(std::move_only_function<void()> cmd)
 	{
-		std::lock_guard g(_lock);
-		std::pair<std::jthread, std::shared_ptr> t_pair;
-		t_pair.first = std::move(std::jthread(fn));
-		t_pair.second = nullptr;
-		_thrds.emplace(name, t_pair);
-		//TODO:Logging
-		
+		{ std::lock_guard g(_lock); _cmds.push(std::move(cmd)); }
+		_CV.notify_one();
 	}
-	//start a thread with an event in it
-	template<typename F>
-	void Start(const std::string& name, F&& fn, std::shared_ptr<Event> _EVNT)
+
+	void ThreadMng::Run(std::stop_token ST)
 	{
-		std::lock_guard g(_lock);
-		_thrds.emplace(name, std::make_pair<std::jthread, std::shared_ptr<Event>>(std::jthread(fn), _EVNT);
-		//TODO:Logging
+		while (true)
+		{
+			std::move_only_function<void()> cmd;
+			{
+				std::unique_lock _l(_lock);
+				if (!_CV.wait(_l, ST, [&] {return !_cmds.empty();}) || ST.stop_requested())
+				{
+					break;
+				}
+				cmd = std::move(_cmds.front());
+				_cmds.pop();
+			}
+			cmd();
+			//TODO: Logger
+		}
+		_thrds.clear();
 	}
-																																																																																																																																																																																																																																					
+
+	void ThreadMng::start()
+	{
+		_worker = std::jthread([this](std::stop_token st) {Run(st); });
+	}
+
 	//stop a thread
-	void Stop(std::string name)
+	void ThreadMng::Stop(std::string name)
 	{
-		std::lock_guard g(_lock);
-		_thrds.erase(name);
-		//TODO:Logging
-	}
-	
-	bool _DTCH(const std::string& name)
-	{
-		std::lock_guard g(_lock);
-		auto it = _thrds.find(name);
-		if (it != _thrds.end())
-		{
-			auto w_thrd = std::move(it->second.first);
-			w_thrd.detach();
-			return true;
-			//TODO:Logging
-		}
-		else
-		{
-			//TODO: Log here an exeption
-
-			return false;
-		}
-	}
-
-	//TODO: write the CV's, event logic and write down the event and thread logic in the README.md
-	void _ThorwEvent(std::string _SRCNAME, std::string EVENTNAME, uint32_t mask)
-	{
-		std::lock_guard g(_lock);
-		auto it = _thrds.find(EVENTNAME);
-		if (it != _thrds.end())
-		{
-			if (it->second.second != nullptr)
+		Post([this, name = std::move(name)]()
 			{
-				it->second.second->_Signal(mask);
-				//TODO:Logging
-			}
-			else
+				_thrds.erase(name);
+			});
+	}
+
+	void ThreadMng::_DTCH(std::string name)
+	{
+		Post([this, name = std::move(name)]()
 			{
-				//TODO: Logging
-			}
-		}
-		else
-		{
-			//TODO: Logging
-		}
-	}
-	std::shared_ptr<Event> GetEvent(std::string&& _NAME)
-	{
+				auto it = _thrds.find(name);
+				if (it != _thrds.end())
+				{
+					auto w_thrd = std::move(it->second.first);
+					w_thrd.detach();
+					return true;
+					//TODO:Logging
+				}
+				else
+				{
+					//TODO: Log here an exeption
 
-		std::lock_guard g(_lock);
-		return std::make_shared<Event>(_thrds.find(_NAME)->second.second);
+					return false;
+				}
+			});
 	}
-	std::shared_ptr<Event> GetEvent(const std::string& _NAME)
-	{
 
-		std::lock_guard g(_lock);
-		return std::make_shared<Event>(_thrds.find(_NAME)->second.second);
-	}
-	bool _AddEvent(std::string _TOADDNAME, Event _EVENT)
+	void ThreadMng::ThrowEvent(std::string target, uint32_t mask)
 	{
-		std::lock_guard g(_lock);
-		auto it = _thrds.find(_TOADDNAME);
-		if (it != _thrds.end())
-		{
+		Post([this, target = std::move(target), mask]
+			{
+				// manager thread
+				auto it = _thrds.find(target);
+				if (it != _thrds.end() && it->second.second)
+					it->second.second->_Signal(mask);
+				//TODO: Logging (not found / no event)
+			});
+	}
+
+	void ThreadMng::GetEvent(std::string _NAME, std::atomic<bool>& flag,std::shared_ptr<Event>& e_var)
+	{
+		Post([this, name = std::move(_NAME), &flag ,&e_var]()
+			{
+				auto it = _thrds.find(name);
+				if (it == _thrds.end())
+				{
+					e_var = nullptr;
+					flag = true;
+					return;
+				}
+				//TODO: Logger
+				e_var = it->second.second;
+				flag = true;
+			});
+	}
+
+	void ThreadMng::_ResetManual(std::string name, uint32_t bitToReset) // unused!!!
+	{
+		Post([this, name = name, bitToReset = bitToReset]() 
+			{
+			auto it = _thrds.find(name);
+			if (it == _thrds.end())
+				//TODO: Logger
+				return;
 			if (it->second.second == nullptr)
-			{
-				it->second.second = std::make_shared<Event>(_EVENT);
-				//TODO:Logging
-				return true;
-			}
-			else
-			{
-				//TODO:Logging
-				return false;
-			}
-		}
-		else
-		{
-			//TODO: Logging
-			return false;
-		}
+				return;
+			it->second.second->_manualReset(bitToReset);
+			});
 	}
 	
-};
+}
